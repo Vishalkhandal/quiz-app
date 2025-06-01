@@ -27,7 +27,7 @@ export const Register = () => {
     setSuccess("");
     try {
       console.log("Signup a user...")
-      const result = await firebase.signupUserWithEmailAndPassword(email, password, name)
+      const result = await firebase.signUpUserWithEmailAndPassword(email, password, name)
       console.log("Create Account Successfully", result);
       setSuccess("Account created successfully! You can now log in.");
       setShowSuccess(true);
@@ -108,7 +108,7 @@ export const Register = () => {
             <div><p className="text-center text-gray-900 font-bold">OR</p></div>
             <button
               type="button"
-              onClick={firebase.signinWithGoogle}
+              onClick={firebase.signInWithGoogle}
               className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold"
             >
               SignUp With Google

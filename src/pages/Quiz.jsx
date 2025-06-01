@@ -12,6 +12,8 @@ function Quiz() {
   const [questions, setQuestions] = useState([]);
   const navigate = useNavigate();
   const firebase = useFirebase();
+  
+  console.log("selectedCategory", selectedCategory);
 
   useEffect(() => {
     if (!selectedCategory) {
@@ -21,6 +23,7 @@ function Quiz() {
     // Fetch quizzes for the selected category
     firebase.fetchQuizzes(selectedCategory.id).then(quizzes => {
       // Assuming each quiz has a questions array, pick the first quiz for the category
+      console.log("category fetch", quizzes)
       if (quizzes.length > 0) {
         setQuestions(quizzes[0].questions || []);
       }

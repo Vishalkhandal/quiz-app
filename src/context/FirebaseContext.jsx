@@ -53,6 +53,7 @@ const googleProvider = new GoogleAuthProvider();
 export const FirebaseProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     console.log("User is", user);
+    console.log("User uid is", user ? (user.uid) : null);
     console.log("User display name", user ? (user.displayName || user.email) : null);
 
     useEffect(() => {
@@ -62,116 +63,177 @@ export const FirebaseProvider = ({ children }) => {
         })
     }, [])
 
-    const signupUserWithEmailAndPassword = async (email, password, name) => {
-        const result = await createUserWithEmailAndPassword(firebaseAuth, email, password)
-        if (name) {
-            await updateProfile(result.user, { displayName: name })
+    // Register new user
+    const signUpUserWithEmailAndPassword = async (email, password, name) => {
+        try {
+            const result = await createUserWithEmailAndPassword(firebaseAuth, email, password)
+            if (name) {
+                await updateProfile(result.user, { displayName: name })
+            }
+            // Create user profile in Firestore
+            await createUserProfile({ ...result.user, displayName: name });
+            return result;
+        } catch (error) {
+            console.log("Error in FirebaseContext :: signUpUserWithEmailAndPassword: ", error)
         }
-        // Optionally create user profile in Firestore
-        // await createUserProfile({ ...result.user, displayName: name });
-        return result;
-
     }
 
+    // Login new user
     const signInUserWithEmailAndPassword = (email, password) => {
-        return signInWithEmailAndPassword(firebaseAuth, email, password)
+        try {
+            return signInWithEmailAndPassword(firebaseAuth, email, password)
+        } catch (error) {
+            console.log("Error in FirebaseContext :: signInUserWithEmailAndPassword: ", error)
+        }
     }
 
-    const signinWithGoogle = () => signInWithPopup(firebaseAuth, googleProvider);
+    // Signup with google
+    const signInWithGoogle = () => {
+        try {
+            signInWithPopup(firebaseAuth, googleProvider);
+        } catch (error) {
+            console.log("Error in FirebaseContext :: signInWithGoogle: ", error)
+        }
+    }
+
+    // Check if user logged in
     const isLoggedIn = user ? true : false;
+
+    // Sign out user
     const logout = () => signOut(firebaseAuth)
 
-    // Create user document after registration
+    // Create user document in firestore after registration
     const createUserProfile = async (user) => {
         if (!user) return;
-        const userRef = doc(firestore, 'users', user.uid);
-        await setDoc(userRef, {
-            displayName: user.displayName || "",
-            email: user.email,
-            photoURL: user.photoURL || "",
-            createdAt: serverTimestamp(),
-            score: 0,
-            quizzesTaken: 0
-        }, { merge: true });
+        try {
+            const userRef = doc(firestore, 'users', user.uid);
+            await setDoc(userRef, {
+                displayName: user.displayName || "",
+                email: user.email,
+                photoURL: user.photoURL || "",
+                createdAt: serverTimestamp(),
+                score: 0,
+                quizzesTaken: 0
+            }, { merge: true });
+        } catch (error) {
+            console.log("Error in FirebaseContext :: createUserProfile: ", error)
+        }
     };
 
     // Fetch user profile
     const fetchUserProfile = async (uid) => {
-        const userRef = doc(firestore, 'users', uid);
-        const userSnap = await getDoc(userRef);
-        return userSnap.exists() ? userSnap.data() : null;
+        try {
+            const userRef = doc(firestore, 'users', uid);
+            const userSnap = await getDoc(userRef);
+            return userSnap.exists() ? userSnap.data() : null;
+        } catch (error) {
+            console.log("Error in FirebaseContext :: fetchUserProfile: ", error)
+        }
     };
 
     // --- CATEGORY FUNCTIONS ---
 
     // Add a new category
     const addCategory = async (category) => {
-        await addDoc(collection(firestore, 'categories'), category);
+        try {
+            await addDoc(collection(firestore, 'categories'), category);
+        } catch (error) {
+            console.log("Error in FirebaseContext :: addCategory: ", error)
+        }
     };
 
     // Fetch all categories
     const fetchCategories = async () => {
-        const snapshot = await getDocs(collection(firestore, 'categories'));
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        try {
+            const snapshot = await getDocs(collection(firestore, 'categories'));
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.log("Error in FirebaseContext :: fetchCategories: ", error)
+        }
     };
 
     // --- QUIZ FUNCTIONS ---
 
     // Add a new quiz
     const addQuiz = async (quiz) => {
-        await addDoc(collection(firestore, 'quizzes'), {
-            ...quiz,
-            createdAt: serverTimestamp()
-        });
+        try {
+            await addDoc(collection(firestore, 'quizzes'), {
+                ...quiz,
+                createdAt: serverTimestamp()
+            });
+        } catch (error) {
+            console.log("Error in FirebaseContext :: addQuiz: ", error)
+        }
     };
 
     // Fetch all quizzes (optionally by category)
     const fetchQuizzes = async (categoryId = null) => {
-        let q = collection(firestore, 'quizzes');
-        if (categoryId) {
-            q = query(q, where('categoryId', '==', categoryId));
+        try {
+            let q = collection(firestore, 'quizzes');
+            if (categoryId) {
+                const categoryPath = `categories/${categoryId}`;
+                q = query(q, where('categoryId', '==', categoryPath));
+            }
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.log("Error in FirebaseContext :: fetchQuizzes: ", error)
         }
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
 
     // Fetch single quiz by ID
     const fetchQuizById = async (quizId) => {
-        const quizRef = doc(firestore, 'quizzes', quizId);
-        const quizSnap = await getDoc(quizRef);
-        return quizSnap.exists() ? { id: quizSnap.id, ...quizSnap.data() } : null;
+        try {
+            const quizRef = doc(firestore, 'quizzes', quizId);
+            const quizSnap = await getDoc(quizRef);
+            return quizSnap.exists() ? { id: quizSnap.id, ...quizSnap.data() } : null;
+        } catch (error) {
+            console.log("Error in FirebaseContext :: fetchQuizById: ", error)
+        }
     };
 
     // --- USER QUIZ RESULT FUNCTIONS ---
 
     // Store a user's quiz result
     const addUserQuizResult = async (result) => {
-        await addDoc(collection(firestore, 'userQuizResults'), {
-            ...result,
-            completedAt: serverTimestamp()
-        });
+        try {
+            await addDoc(collection(firestore, 'userQuizResults'), {
+                ...result,
+                completedAt: serverTimestamp()
+            });
+        } catch (error) {
+            console.log("Error in FirebaseContext :: addUserQuizResult: ", error)
+        }
     };
 
     // Fetch all quiz results for a user
     const fetchUserQuizResults = async (userId) => {
-        const q = query(collection(firestore, 'userQuizResults'), where('userId', '==', userId));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        try {
+            const q = query(collection(firestore, 'userQuizResults'), where('userId', '==', userId));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.log("Error in FirebaseContext :: fetchUserQuizResults: ", error)
+        }
     };
 
     // Fetch top N users by score for leaderboard
     const fetchLeaderboard = async (limitCount = 10) => {
-        const usersRef = collection(firestore, 'users');
-        const q = query(usersRef, where('score', '>=', 0), orderBy('score', 'desc'), limit(limitCount));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        try {
+            const usersRef = collection(firestore, 'users');
+            const q = query(usersRef, where('score', '>=', 0), orderBy('score', 'desc'), limit(limitCount));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.log("Error in FirebaseContext :: fetchLeaderboard: ", error)
+        }
     };
 
     return (
         <FirebaseContext.Provider value={{
-            signupUserWithEmailAndPassword,
+            signUpUserWithEmailAndPassword,
             signInUserWithEmailAndPassword,
-            signinWithGoogle,
+            signInWithGoogle,
             isLoggedIn,
             logout,
             user,
