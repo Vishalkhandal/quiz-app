@@ -1,10 +1,15 @@
-import { Home, Trophy, User } from 'lucide-react'
-import { useState } from 'react'
+import { Home, Trophy, User, NotebookTabs, FileQuestion } from 'lucide-react'
 import { NavLink } from 'react-router'
 import { useFirebase } from '../context/FirebaseContext';
 
 export const Header = () => {
   const firebase = useFirebase();
+
+  console.log(firebase.user?.email || "No user yet");
+
+  if (firebase.loading) {
+    return null;
+  }
 
   return (
     <nav className="bg-white shadow-sm border-b">
@@ -19,7 +24,19 @@ export const Header = () => {
             <Trophy size={20} />
             Leaderboard
           </NavLink>
-          {!firebase.isLoggedIn ? (
+          {firebase.user && firebase.user.email === "admin@gmail.com" && (
+            <>
+              <NavLink to="/admin/add-category" className="flex items-center gap-2 text-gray-600 hover:text-blue-600">
+                <NotebookTabs size={20} />
+                Add Category
+              </NavLink>
+              <NavLink to="/admin/add-quiz" className="flex items-center gap-2 text-gray-600 hover:text-blue-600">
+                <FileQuestion size={20} />
+                Add Quiz
+              </NavLink>
+            </>
+          )}
+          {!firebase.user ? (
             <>
               <NavLink to="/login" className="px-4 py-2 text-blue-600 border border-blue-600 rounded hover:bg-blue-50">
                 Login
@@ -45,7 +62,6 @@ export const Header = () => {
               </button>
             </>
           )}
-
         </div>
       </div>
     </nav>

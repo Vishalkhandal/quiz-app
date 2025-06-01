@@ -52,15 +52,20 @@ const googleProvider = new GoogleAuthProvider();
 
 export const FirebaseProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
     console.log("User is", user);
     console.log("User uid is", user ? (user.uid) : null);
     console.log("User display name", user ? (user.displayName || user.email) : null);
 
     useEffect(() => {
-        onAuthStateChanged(firebaseAuth, user => {
+        const unsubscribe = onAuthStateChanged(firebaseAuth, user => {
             if (user) setUser(user)
             else setUser(null)
-        })
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
     }, [])
 
     // Register new user
@@ -175,6 +180,7 @@ export const FirebaseProvider = ({ children }) => {
                 q = query(q, where('categoryId', '==', categoryPath));
             }
             const snapshot = await getDocs(q);
+            console.log("snapshot fetch quizzes", snapshot);
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } catch (error) {
             console.log("Error in FirebaseContext :: fetchQuizzes: ", error)
@@ -237,6 +243,7 @@ export const FirebaseProvider = ({ children }) => {
             isLoggedIn,
             logout,
             user,
+            loading,
             setUser,
             createUserProfile,
             fetchUserProfile,
