@@ -2,9 +2,10 @@ import { Navigate } from "react-router";
 import { useFirebase } from "../context/FirebaseContext";
 
 export default function RequireAdmin({ children }) {
-  const { user } = useFirebase();
-  // Replace with your admin email or logic
-  const isAdmin = user && user.email === "admin@email.com";
+  const firebase = useFirebase();
+
+  const isAdmin = firebase.user && firebase.user.email === "admin@gmail.com";
+  
   if (!isAdmin) return <Navigate to="/" replace />;
-  return children;
+  return children;  
 }

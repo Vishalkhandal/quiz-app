@@ -5,7 +5,7 @@ import { useFirebase } from '../context/FirebaseContext';
 export const Header = () => {
   const firebase = useFirebase();
 
-  console.log(firebase.user?.email || "No user yet");
+  // console.log(firebase.user?.email || "No user yet");
 
   if (firebase.loading) {
     return null;

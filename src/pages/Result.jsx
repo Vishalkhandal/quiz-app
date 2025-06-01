@@ -10,10 +10,12 @@ function Result() {
     const {user} = useFirebase();
     const navigate = useNavigate();
     const [results, setResults] = useState([]);
+    const [categories, setCategories] = useState([]);
 
     useEffect(() => {
         if (user) {
             firebase.fetchUserQuizResults(user.uid).then(setResults);
+            firebase.fetchCategories().then(setCategories);
         }
     }, [user, firebase]);
 
@@ -26,6 +28,12 @@ function Result() {
         resetQuiz();
         navigate("/");
     }
+
+    // Helper to get category name by id
+    const getCategoryName = (id) => {
+        const cat = categories.find(c => c.id === id);
+        return cat ? cat.name : id;
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center p-4">
@@ -65,7 +73,7 @@ function Result() {
                     <ul className="text-gray-600 text-sm space-y-1">
                         {results.slice(-3).reverse().map(r => (
                             <li key={r.id}>
-                                {r.categoryId} - {r.score}%
+                                {getCategoryName(r.categoryId)} - {r.score}%
                             </li>
                         ))}
                     </ul>

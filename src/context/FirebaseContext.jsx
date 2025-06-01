@@ -54,10 +54,6 @@ export const FirebaseProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    console.log("User is", user);
-    console.log("User uid is", user ? (user.uid) : null);
-    console.log("User display name", user ? (user.displayName || user.email) : null);
-
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(firebaseAuth, user => {
             if (user) setUser(user)
@@ -176,8 +172,7 @@ export const FirebaseProvider = ({ children }) => {
         try {
             let q = collection(firestore, 'quizzes');
             if (categoryId) {
-                const categoryPath = `categories/${categoryId}`;
-                q = query(q, where('categoryId', '==', categoryPath));
+                q = query(q, where('categoryId', '==', categoryId));
             }
             const snapshot = await getDocs(q);
             console.log("snapshot fetch quizzes", snapshot);
@@ -207,6 +202,17 @@ export const FirebaseProvider = ({ children }) => {
                 ...result,
                 completedAt: serverTimestamp()
             });
+            const userRef = doc(firestore, 'users', result.userId)  
+            const userSnap = await getDoc(userRef);
+            if(userSnap.exists()) {
+                const userData = userSnap.data();
+                const prevQuizzesTaken = userData.quizzesTaken || 0;
+                await updateDoc(userRef, {
+                    quizzesTaken: prevQuizzesTaken + 1,
+                    score: result.score  // latest score update
+                    // score: Math.max(userData.score || 0, result.score)  // highest score update
+                });
+            }
         } catch (error) {
             console.log("Error in FirebaseContext :: addUserQuizResult: ", error)
         }

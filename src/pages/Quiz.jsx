@@ -10,10 +10,9 @@ function Quiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [timeLeft, setTimeLeft] = useState(30)
   const [questions, setQuestions] = useState([]);
+  const [quizId, setQuizId] = useState(null);
   const navigate = useNavigate();
   const firebase = useFirebase();
-  
-  console.log("selectedCategory", selectedCategory);
 
   useEffect(() => {
     if (!selectedCategory) {
@@ -26,6 +25,7 @@ function Quiz() {
       console.log("category fetch", quizzes)
       if (quizzes.length > 0) {
         setQuestions(quizzes[0].questions || []);
+        setQuizId(quizzes[0].id)
       }
     });
   }, [selectedCategory, firebase, navigate]);
@@ -71,7 +71,7 @@ function Quiz() {
     // Optionally store result in Firestore
     firebase.addUserQuizResult({
       userId: firebase.user?.uid,
-      quizId: selectedCategory.id, // or quizId if available
+      quizId: quizId, // or quizId if available
       categoryId: selectedCategory.id,
       score: Math.round((correctAnswers / questions.length) * 100),
       answers: Object.values(answers)
