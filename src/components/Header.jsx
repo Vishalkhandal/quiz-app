@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
 import { Home, Trophy, User } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
+import { useState } from 'react'
 import { NavLink } from 'react-router'
+import { useFirebase } from '../context/FirebaseContext';
 
 export const Header = () => {
-  const { user } = useAuth()
+  const firebase = useFirebase();
 
   return (
     <nav className="bg-white shadow-sm border-b">
@@ -19,7 +19,7 @@ export const Header = () => {
             <Trophy size={20} />
             Leaderboard
           </NavLink>
-          {!user ? (
+          {!firebase.isLoggedIn ? (
             <>
               <NavLink to="/login" className="px-4 py-2 text-blue-600 border border-blue-600 rounded hover:bg-blue-50">
                 Login
@@ -35,10 +35,10 @@ export const Header = () => {
             <>
               <div className="flex items-center gap-2 text-gray-700">
                 <User size={20} />
-                {user?.name}
+                {firebase.user ? (firebase.user.displayName || firebase.user.email) : null}
               </div>
               <button
-                // onClick={logout}
+                onClick={firebase.logout}
                 className="px-4 py-2 cursor-pointer text-red-600 border border-red-600 rounded hover:bg-red-50"
               >
                 Logout

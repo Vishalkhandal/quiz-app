@@ -1,14 +1,23 @@
 import { CheckCircle } from 'lucide-react'
 import { useNavigate } from 'react-router';
-import { useAuth } from '../context/AuthContext';
 import { useQuiz } from '../context/QuizContext';
+import { useFirebase } from '../context/FirebaseContext';
+import { useEffect, useState } from 'react';
 
 function Result() {
-    const {user} = useAuth()
-    const {score, selectedCategory, resetQuiz} = useQuiz();
+    const { score, selectedCategory, resetQuiz } = useQuiz();
+    const firebase = useFirebase();
+    const {user} = useFirebase();
     const navigate = useNavigate();
+    const [results, setResults] = useState([]);
 
-    if(score === null || !selectedCategory) {
+    useEffect(() => {
+        if (user) {
+            firebase.fetchUserQuizResults(user.uid).then(setResults);
+        }
+    }, [user, firebase]);
+
+    if (score === null || !selectedCategory) {
         navigate('/')
         return null;
     } 
@@ -48,6 +57,18 @@ function Result() {
                     >
                         View Leaderboard
                     </button>
+                </div>
+
+                {/* Example: Show user's last 3 results */}
+                <div className="mt-8 text-left">
+                    <h3 className="font-semibold text-gray-700 mb-2">Your Recent Results</h3>
+                    <ul className="text-gray-600 text-sm space-y-1">
+                        {results.slice(-3).reverse().map(r => (
+                            <li key={r.id}>
+                                {r.categoryId} - {r.score}%
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             </div>
         </div>

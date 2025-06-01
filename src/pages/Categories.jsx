@@ -1,12 +1,18 @@
-import { categories } from '../mockData'
+import { useEffect, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
-import { useQuiz } from '../context/QuizContext';
-import { useNavigate } from 'react-router';
+import { useQuiz } from '../context/QuizContext'
+import { useNavigate } from 'react-router'
+import { useFirebase } from '../context/FirebaseContext'
 
 export const Categories = () => {
-
-    const {setSelectedCategory, resetQuiz} = useQuiz();
+    const { setSelectedCategory, resetQuiz } = useQuiz();
     const navigate = useNavigate();
+    const firebase = useFirebase();
+    const [categories, setCategories] = useState([]);
+
+    useEffect(() => {
+        firebase.fetchCategories().then(setCategories);
+    }, [firebase]);
 
     const handleCategorySelect = (category) => {
         resetQuiz();
@@ -31,7 +37,7 @@ export const Categories = () => {
                         <div className="text-center">
                             <div className="text-4xl mb-4">{category.icon}</div>
                             <h3 className="text-xl font-semibold text-gray-800 mb-2">{category.name}</h3>
-                            <p className="text-gray-600 mb-4">{category.questions} Questions</p>
+                            <p className="text-gray-600 mb-4">{category.description || ''}</p>
                             <div className="flex items-center justify-center gap-2 text-blue-600">
                                 <span>Start Quiz</span>
                                 <ArrowRight size={16} />

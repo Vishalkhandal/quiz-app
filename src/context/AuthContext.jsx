@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
     const [score, setScore] = useState(0);
 
     return (
-        <AuthContext.Provider value={{user, setUser}}>
+        <AuthContext.Provider value={{}}>
             {children}
         </AuthContext.Provider>
     )

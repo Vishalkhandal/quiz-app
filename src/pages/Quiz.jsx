@@ -1,41 +1,47 @@
 import { ProgressBar } from '../components/ProgressBar';
-import { questions } from '../mockData';
-import {useState, useEffect} from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router';
 import { useQuiz } from '../context/QuizContext';
+import { useFirebase } from '../context/FirebaseContext';
 import { SkipForward } from 'lucide-react'
 
 function Quiz() {
-  const {selectedCategory, setScore, answers, setAnswers} = useQuiz();
+  const { selectedCategory, setScore, answers, setAnswers } = useQuiz();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [timeLeft, setTimeLeft] = useState(30)
+  const [questions, setQuestions] = useState([]);
   const navigate = useNavigate();
+  const firebase = useFirebase();
 
   useEffect(() => {
-    if(!selectedCategory) {
+    if (!selectedCategory) {
       navigate("/")
+      return;
     }
-  }, [selectedCategory, navigate])
+    // Fetch quizzes for the selected category
+    firebase.fetchQuizzes(selectedCategory.id).then(quizzes => {
+      // Assuming each quiz has a questions array, pick the first quiz for the category
+      if (quizzes.length > 0) {
+        setQuestions(quizzes[0].questions || []);
+      }
+    });
+  }, [selectedCategory, firebase, navigate]);
 
-  // Guard: Don't render or access categoryQuestions if selectedCategory is not set
-  if (!selectedCategory) return null;
-
-  const categoryQuestions = questions[selectedCategory.id] || [];
-  const currentQ = categoryQuestions[currentQuestion];
+  const currentQ = questions[currentQuestion];
 
   useEffect(() => {
-    if(timeLeft > 0 && currentQ) {
+    if (timeLeft > 0 && currentQ) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
       return () => clearTimeout(timer);
     } else if (timeLeft === 0) {
       handleNextQuestion();
     }
-  })
-  
+  });
+
   if (!currentQ) return <div>Loading...</div>;
 
   const handleNextQuestion = () => {
-    if (currentQuestion < categoryQuestions.length - 1) {
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setTimeLeft(30);
     } else {
@@ -53,18 +59,22 @@ function Quiz() {
 
   const finishQuiz = () => {
     let correctAnswers = 0;
-
-    categoryQuestions.forEach((q, index) => {
+    questions.forEach((q, index) => {
       if (answers[index] === q.correct) {
         correctAnswers++;
       }
     });
-
-    setScore(Math.round((correctAnswers / categoryQuestions.length) * 100));
+    setScore(Math.round((correctAnswers / questions.length) * 100));
+    // Optionally store result in Firestore
+    firebase.addUserQuizResult({
+      userId: firebase.user?.uid,
+      quizId: selectedCategory.id, // or quizId if available
+      categoryId: selectedCategory.id,
+      score: Math.round((correctAnswers / questions.length) * 100),
+      answers: Object.values(answers)
+    });
     navigate("/result")
   };
-
-  if(!currentQ) return <div>Loading...</div>
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-purple-700 items-center justify-center p-4">
@@ -83,7 +93,7 @@ function Quiz() {
             </div>
             <ProgressBar
               current={currentQuestion}
-              total={categoryQuestions.length}
+              total={questions.length}
               timeLeft={timeLeft}
             />
           </div>
@@ -117,7 +127,7 @@ function Quiz() {
               disabled={answers[currentQuestion] === undefined}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              {currentQuestion === categoryQuestions.length - 1 ? 'Finish Quiz' : 'Next Question'}
+              {currentQuestion === questions.length - 1 ? 'Finish Quiz' : 'Next Question'}
             </button>
           </div>
         </div>

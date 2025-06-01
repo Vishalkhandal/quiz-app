@@ -1,29 +1,37 @@
-import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
 import { BookOpen } from 'lucide-react';
 import { Link } from "react-router";
 import { useNavigate } from "react-router";
+import { useFirebase } from "../context/FirebaseContext";
 
 export const Login = () => {
-  const { setUser } = useAuth();
+  const firebase = useFirebase()
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: ""
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("")
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const { username, email } = formData;
-    if (!username || !email) {
-      setError("Username and Email are required.");
-      return;
+  useEffect(() => {
+    if(firebase.isLoggedIn) {
+      navigate("/")
     }
-    setUser({ name: username, email: email });
+  }, [firebase, navigate])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setError("");
-    navigate("/")
+    setSuccess("");
+    try {
+      console.log("Login user...")
+      const result = await firebase.signInUserWithEmailAndPassword(email, password);
+      console.log("User Login Successfully", result);
+      setSuccess("User login successfully")
+      // Optionally, navigate after a short delay:
+      setTimeout(() => navigate("/"), 1500);
+    } catch (error) {
+      setError("Invalid email or password.");
+    }
   };
 
   return (
@@ -43,25 +51,20 @@ export const Login = () => {
               {error}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <input
-                type="text"
-                id="username"
-                placeholder="Username"
-                value={formData.username}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              />
+          {success && (
+            <div className="bg-green-100 text-green-700 px-4 py-2 rounded mb-2 text-center">
+              {success}
             </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <input
                 type="email"
                 id="email"
                 placeholder="Email"
-                value={formData.email}
+                value={email}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>
@@ -69,20 +72,20 @@ export const Login = () => {
                 type="password"
                 id="password"
                 placeholder="Password"
-                value={formData.password}
+                value={password}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <button
               type="submit"
               className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
             >
-              Login / Register
+              Login
             </button>
             <p className="text-center text-gray-600 mt-4">
               Don't have an account? <Link to="/register" className="text-blue-600 hover:underline">Register</Link> here.
-            </p>             
+            </p>
           </form>
         </div>
       </div>
